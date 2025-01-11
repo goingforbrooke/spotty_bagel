@@ -3,7 +3,7 @@
 TODO: Add your module docstring here.
 """
 from pathlib import Path
-from logging import error, info, warning
+from logging import basicConfig, DEBUG, debug, error, info, warning
 from base64 import b64encode
 
 from requests import get as http_get, post as http_post
@@ -66,7 +66,61 @@ def get_client_secret():
     return client_secret
 
 
+def get_bagel_song():
+    bagel_stream_link = "http://ais-sa3.cdnstream1.com/2606_128.aac"
+    headers = {
+        "Icy-MetaData": "1"  # request ICY metadata
+    }
+    get_response = http_get(bagel_stream_link, headers=headers, stream=True)
+    icy_metaint = int(get_response.headers['icy-metaint'])
+    response_stream = get_response.raw
+    # Skip initial stream data
+    response_stream.read(icy_metaint)
+    # Read metadata block (length byte * 16 bytes).
+    metadata_length = ord(response_stream.read(1)) * 16
+    if metadata_length > 0:
+        found_metadata = response_stream.read(metadata_length).decode("utf-8", errors="ignore")
+        # DEBUG:root:Found_metadata: StreamTitle='King Stingray - Day Off ';
+        debug(f'Found_metadata: {found_metadata}')
+
+        # Remove trailing null characters.
+        trailing_nulls_removed = found_metadata.rstrip('\x00')
+        # DEBUG:root:trailing_nulls_removed: StreamTitle='King Stingray - Day Off ';
+        debug(f'trailing_nulls_removed: {trailing_nulls_removed}')
+
+        # Remove trailing semicolon.
+        trailing_semicolon_removed = trailing_nulls_removed.rstrip(';')
+        # DEBUG:root:trailing_semicolon_removed: StreamTitle='King Stingray - Day Off '
+        debug(f'trailing_semicolon_removed: {trailing_semicolon_removed}')
+
+        metadata_key, song_info = trailing_semicolon_removed.split('=')
+        assert (metadata_key == 'StreamTitle')
+        # DEBUG:root:metadata_key: StreamTitle, song_info: 'King Stingray - Day Off '
+        debug(f'metadata_key: {metadata_key}, song_info, {song_info}')
+
+        # Remove squotes from song info.
+        cleaned_info = song_info.lstrip("'").rstrip("'")
+        # DEBUG:root:King Stingray - Day Off
+        debug(f'cleaned_info: {cleaned_info}')
+
+        song_artist, song_title = cleaned_info.split('-')
+        # DEBUG:root:metadata_key, song_info: StreamTitle, 'King Stingray - Day Off '
+        debug(f'song_artist: {song_artist}, song_title: {song_title}')
+
+        cleaned_artist, cleaned_title = song_artist.strip(), song_title.strip()
+        debug(f'cleaned_artist: {cleaned_artist}, cleaned_title: {cleaned_title}')
+
+        found_song = {'artist': cleaned_artist, 'title': cleaned_title}
+        info(f'Found song: {found_song}')
+        return found_song
+
 def main():
+    # Show all log messages.
+    basicConfig(level=DEBUG)
+
+    current_song = get_bagel_song()
+    print(current_song)
+
     info("Done")
 
 
