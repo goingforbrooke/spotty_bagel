@@ -15,7 +15,9 @@ Get your token on [Spotify's developer site](https://developer.spotify.com/docum
 - 25-1-11 site doesn't open on Safari
     - Firefox works
 """
-def get_spotify_access_token(client_id, client_secret):
+def get_spotify_access_token():
+    client_id, client_secret = get_client_id(), get_client_secret()
+
     token_url = "https://accounts.spotify.com/api/token"
     b64_id_secret = b64encode(f"{client_id}:{client_secret}".encode()).decode()
     request_headers = {"Content-Type": "application/x-www-form-urlencoded",
@@ -38,8 +40,7 @@ def get_spotify_access_token(client_id, client_secret):
 
 """Search for a song on Spotify."""
 def search_spotify_song(song_name, artist_name=None):
-    client_id, client_secret = get_client_id(), get_client_secret()
-    client_token = get_spotify_access_token(client_id, client_secret)
+    client_token = get_spotify_access_token()
 
     headers = {"Authorization": f"Bearer {client_token}"}
     song_query = f"track:{song_name}"
@@ -66,9 +67,6 @@ def get_client_secret():
 
 
 def main():
-    client_id, client_secret = get_client_id(), get_client_secret()
-    client_token = get_spotify_access_token(client_id, client_secret)
-
     info("Done")
 
 
