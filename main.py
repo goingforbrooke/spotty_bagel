@@ -257,6 +257,7 @@ def toggle_vlc_playback():
     if host_platform != 'Darwin':
         error_message = f'Toggling VLC not available on {host_platform}'
         error(error_message)
+        # todo: Add VLC toggle support for non-MacOS platforms.
         raise NotImplemented(error_message)
 
     cli_args = ('osascript', '-e', 'tell application "VLC" to play')
@@ -308,6 +309,7 @@ def application_is_installed(application_name, throw_error) -> bool:
         if host_platform == 'Windows':
             error_message = f"Manual application discovery isn't supported for Windows."
             error(error_message)
+            # todo: Add manual application discovery for Windows.
             raise NotImplemented(error_message)
         elif host_platform == 'Darwin':
             expected_path = Path(f'/Applications/{application_name.capitalize()}.app')
