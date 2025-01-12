@@ -132,7 +132,8 @@ def main():
     winnowed_tracks = [{'track_name': found_track['name'],
                         'artist_name': [artist['name'] for artist in found_track['artists']],
                         'album_name': found_track['album']['name'],
-                        'track_popularity': found_track['popularity']}
+                        'track_popularity': found_track['popularity'],
+                        'song_link': found_track['external_urls']['spotify']}
                        for found_track in found_tracks]
     from pprint import pprint; pprint(winnowed_tracks)
 
