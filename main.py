@@ -148,24 +148,8 @@ def open_in_spotify_app(track_url):
     return True
 
 
-def main():
-    # Show all log messages.
-    basicConfig(level=DEBUG)
-
-    current_song = get_bagel_song()
-
-    # Search Spotify for the song.
-    found_tracks = search_spotify_song(current_song['title'], artist_name=current_song['artist'], limit_to=5)
-
-    # Reduce track information to what we're interested in so search results take up less terminal height in the next space.
-    # found_track.keys(): dict_keys(['album', 'artists', 'available_markets', 'disc_number', 'duration_ms', 'explicit', 'external_ids', 'external_urls', 'href', 'id', 'is_local', 'is_playable', 'name', 'popularity', 'preview_url', 'track_number', 'type', 'uri'])
-    winnowed_tracks = [{'track_name': found_track['name'],
-                        # Assume one artist.
-                        'artist_name': [artist['name'] for artist in found_track['artists']][0],
-                        'album_name': found_track['album']['name'],
-                        'track_popularity': found_track['popularity'],
-                        'song_link': found_track['external_urls']['spotify'],}
-                       for found_track in found_tracks]
+"""Calculate the width of the widest cell that we're going to display in the terminal."""
+def calculate_widest_cell(winnowed_tracks):
     headers_and_cells = []
     # Use the widest cell as the column width.
     for winnowed_track in winnowed_tracks:
@@ -176,26 +160,90 @@ def main():
                 headers_and_cells.append(str(row_cell))
     widest_cell = max(len(header_or_cell) for header_or_cell in headers_and_cells)
     debug(f'Widest cell is {widest_cell} characters wide')
-    column_width = widest_cell
+    return widest_cell
 
+
+"""Show headers for the search results table in the terminal."""
+def display_table_headers(column_width, winnowed_tracks):
+    assert len(winnowed_tracks) > 0
+    # Get the first track b/c doesn't matter which track we get, since they all have the same headers.
+    first_track = winnowed_tracks[0]
     # Display table headers.
-    spaced_headers = (raw_header.replace('_', ' ') for raw_header in winnowed_track.keys())
+    spaced_headers = (raw_header.replace('_', ' ') for raw_header in first_track.keys())
     pretty_headers = (spaced_header.title() for spaced_header in spaced_headers)
     table_headers = [f"{str(table_header):<{column_width}}" for table_header in pretty_headers]
     display_headers = ' '.join(table_headers)
     print(display_headers)
     print('-' * sum(len(str(table_header)) for table_header in table_headers))
 
+
+"""Show search results in the terminal."""
+def display_search_results(column_width, winnowed_tracks):
     # Display simplified search results in the terminal
     for winnowed_track in winnowed_tracks:
         display_tidbits = [f"{str(value):<{column_width}}" for value in winnowed_track.values()]
         display_row = ' '.join(display_tidbits)
         print(display_row)
 
+
+"""Reduce track information to what we're interested in so search results take up less terminal height in the next space.
+
+# Known Keys in Found Tracks
+
+- **album**
+- **artists**
+- available_markets
+- disc_number
+- duration_ms
+- explicit
+- external_ids
+- **external_urls**
+- href
+- id
+- is_local
+- is_playable
+- **name**
+- **popularity**
+- preview_url
+- track_number
+- type
+- uri
+"""
+def winnow_tracks(found_tracks):
+    winnowed_tracks = [{'track_name': found_track['name'],
+                        # Assume one artist.
+                        'artist_name': [artist['name'] for artist in found_track['artists']][0],
+                        'album_name': found_track['album']['name'],
+                        'track_popularity': found_track['popularity'],
+                        'song_link': found_track['external_urls']['spotify'], }
+                       for found_track in found_tracks]
+    return winnowed_tracks
+
+
+def main():
+    # Show all log messages.
+    basicConfig(level=DEBUG)
+
+    # Get info about the current song playing on BAGeL radio.
+    current_song = get_bagel_song()
+
+    # Search Spotify for the top five matches.
+    found_tracks = search_spotify_song(current_song['title'], artist_name=current_song['artist'], limit_to=5)
+
+    # Reduce track info to the fields that we're interested in displaying.
+    winnowed_tracks = winnow_tracks(found_tracks)
+
+    # Display search results in the terminal.
+    widest_cell = calculate_widest_cell(winnowed_tracks)
+    display_table_headers(widest_cell, winnowed_tracks)
+    display_search_results(widest_cell, winnowed_tracks)
+
+    # Open the first search result in Spotify.
     if len(winnowed_tracks) > 0:
         # Open first result in Spotify (and start playing it).
         first_result = winnowed_tracks[0]['song_link']
         open_in_spotify_app(first_result)
+    # Otherwise, exit early if there is no track to open.
     else:
         warning_message = '😱 No songs were found, so we\'re exiting early without opening the first result in Spotify.'
         warning(warning_message)
