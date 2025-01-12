@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Spotty Bagel is a command line application for opening the current [BAGeL Radio]() song in your [Spotify]() application."""
-from logging import basicConfig, DEBUG, error, info, warning
+from logging import basicConfig, DEBUG, error, INFO, info, warning
 
 from bagel import get_bagel_song
 from display import calculate_widest_cell, display_table_headers, display_search_results, winnow_tracks
@@ -11,7 +11,7 @@ from vlc import toggle_vlc_playback
 def main():
     # todo: Add `--help` CLI flag.
     # Show all log messages.
-    basicConfig(level=DEBUG)
+    basicConfig(level=INFO)
 
     # Get info about the current song playing on BAGeL radio.
     current_song = get_bagel_song()
