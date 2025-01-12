@@ -34,24 +34,27 @@ def get_spotify_access_token():
     access_token = post_response.json()
     access_token = access_token["access_token"]
 
-    info(f"Got {len(access_token)} character access token")
+    debug(f"Retrieved a {len(access_token)} character access token (that's good for an hour)")
     return access_token
 
 
 """Search for a song on Spotify."""
-def search_spotify_song(song_name, artist_name=None):
+def search_spotify_song(song_name, artist_name, limit_to):
     client_token = get_spotify_access_token()
 
     headers = {"Authorization": f"Bearer {client_token}"}
     song_query = f"track:{song_name}"
     if artist_name:
         song_query += f" artist:{artist_name}"
-    request_url = f"https://api.spotify.com/v1/search?q={song_query}&type=track"
+    request_url = f"https://api.spotify.com/v1/search?q={song_query}&type=track&limit={limit_to}"
 
     get_response = http_get(request_url, headers=headers)
 
-    info("Searched for song on Spotify")
-    return get_response.json()
+    search_results = get_response.json()
+    debug(f'Spotify found {search_results["tracks"]["total"]} tracks for "{song_name}" by {artist_name}')
+
+    found_tracks = search_results['tracks']['items']
+    return found_tracks
 
 
 """Get our client id."""
@@ -111,7 +114,7 @@ def get_bagel_song():
         debug(f'cleaned_artist: {cleaned_artist}, cleaned_title: {cleaned_title}')
 
         found_song = {'artist': cleaned_artist, 'title': cleaned_title}
-        info(f'Found song: {found_song}')
+        info(f'Current BAGeL song: {found_song}')
         return found_song
 
 def main():
@@ -119,7 +122,18 @@ def main():
     basicConfig(level=DEBUG)
 
     current_song = get_bagel_song()
-    print(current_song)
+
+    # Search Spotify for the song.
+    found_tracks = search_spotify_song(current_song['title'], artist_name=current_song['artist'], limit_to=5)
+
+    # Reduce track information to what we're interested in so search results take up less terminal height in the next space.
+    # found_track.keys(): dict_keys(['album', 'artists', 'available_markets', 'disc_number', 'duration_ms', 'explicit', 'external_ids', 'external_urls', 'href', 'id', 'is_local', 'is_playable', 'name', 'popularity', 'preview_url', 'track_number', 'type', 'uri'])
+    winnowed_tracks = [{'track_name': found_track['name'],
+                        'artist_name': [artist['name'] for artist in found_track['artists']],
+                        'album_name': found_track['album']['name'],
+                        'track_popularity': found_track['popularity']}
+                       for found_track in found_tracks]
+    from pprint import pprint; pprint(winnowed_tracks)
 
     info("Done")
 
