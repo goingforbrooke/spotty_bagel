@@ -150,7 +150,7 @@ def open_in_spotify_app(track_url):
 
 def main():
     # Show all log messages.
-    basicConfig(level=INFO)
+    basicConfig(level=DEBUG)
 
     current_song = get_bagel_song()
 
@@ -160,13 +160,37 @@ def main():
     # Reduce track information to what we're interested in so search results take up less terminal height in the next space.
     # found_track.keys(): dict_keys(['album', 'artists', 'available_markets', 'disc_number', 'duration_ms', 'explicit', 'external_ids', 'external_urls', 'href', 'id', 'is_local', 'is_playable', 'name', 'popularity', 'preview_url', 'track_number', 'type', 'uri'])
     winnowed_tracks = [{'track_name': found_track['name'],
-                        'artist_name': [artist['name'] for artist in found_track['artists']],
+                        # Assume one artist.
+                        'artist_name': [artist['name'] for artist in found_track['artists']][0],
                         'album_name': found_track['album']['name'],
                         'track_popularity': found_track['popularity'],
-                        'song_link': found_track['external_urls']['spotify']}
+                        'song_link': found_track['external_urls']['spotify'],}
                        for found_track in found_tracks]
+    headers_and_cells = []
+    # Use the widest cell as the column width.
+    for winnowed_track in winnowed_tracks:
+        for row_header, row_cell in winnowed_track.items():
+            headers_and_cells.append(str(row_header))
+            # Don't let hyperlinks throw off table formatting.
+            if not str(row_cell).startswith('http'):
+                headers_and_cells.append(str(row_cell))
+    widest_cell = max(len(header_or_cell) for header_or_cell in headers_and_cells)
+    debug(f'Widest cell is {widest_cell} characters wide')
+    column_width = widest_cell
+
+    # Display table headers.
+    spaced_headers = (raw_header.replace('_', ' ') for raw_header in winnowed_track.keys())
+    pretty_headers = (spaced_header.title() for spaced_header in spaced_headers)
+    table_headers = [f"{str(table_header):<{column_width}}" for table_header in pretty_headers]
+    display_headers = ' '.join(table_headers)
+    print(display_headers)
+    print('-' * sum(len(str(table_header)) for table_header in table_headers))
+
     # Display simplified search results in the terminal
-    from pprint import pprint; pprint(winnowed_tracks)
+    for winnowed_track in winnowed_tracks:
+        display_tidbits = [f"{str(value):<{column_width}}" for value in winnowed_track.values()]
+        display_row = ' '.join(display_tidbits)
+        print(display_row)
 
     if len(winnowed_tracks) > 0:
         # Open first result in Spotify (and start playing it).
