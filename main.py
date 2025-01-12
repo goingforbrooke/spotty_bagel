@@ -117,7 +117,10 @@ def get_bagel_song():
         # DEBUG:root:King Stingray - Day Off
         debug(f'cleaned_info: {cleaned_info}')
 
-        song_artist, song_title = cleaned_info.split('-')
+        # edge case: two en dashes like in "Yeah Yeah Yeahs - Y-Control"
+        song_artist = cleaned_info.split('-')[0]
+        song_title = cleaned_info.split('-')[1]
+
         # DEBUG:root:metadata_key, song_info: StreamTitle, 'King Stingray - Day Off '
         debug(f'song_artist: {song_artist}, song_title: {song_title}')
 
