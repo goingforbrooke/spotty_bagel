@@ -3,7 +3,7 @@
 TODO: Add your module docstring here.
 """
 from base64 import b64encode
-from logging import basicConfig, DEBUG, debug, error, info, warning
+from logging import basicConfig, DEBUG, debug, error, INFO, info, warning
 from pathlib import Path
 from subprocess import run as run_cli
 
@@ -58,15 +58,24 @@ def search_spotify_song(song_name, artist_name, limit_to):
     return found_tracks
 
 
-"""Get our client id."""
+"""Get our client id.
+
+Expects `client_id.txt` to be a sibling of `main.py`.
+"""
 def get_client_id():
-    client_id = Path('client_id.txt').read_text()
+    script_path = Path(__file__).resolve(strict=True)
+    client_id = Path(script_path.parent, 'client_id.txt').read_text()
     return client_id
 
 
-"""Get our client secret."""
+"""Get our client secret.
+
+Expects `client_secret.txt` to be a sibling of `main.py`.
+"""
 def get_client_secret():
-    client_secret = Path('client_secret.txt').read_text()
+    # Get the path to `main.py`, not the symlink in `~/bin/`.
+    script_path = Path(__file__).resolve(strict=True)
+    client_secret = Path(script_path.parent, 'client_secret.txt').read_text()
     return client_secret
 
 
@@ -116,7 +125,7 @@ def get_bagel_song():
         debug(f'cleaned_artist: {cleaned_artist}, cleaned_title: {cleaned_title}')
 
         found_song = {'artist': cleaned_artist, 'title': cleaned_title}
-        info(f'Current BAGeL song: {found_song}')
+        info(f'🥯 Current BAGeL song: {found_song}')
         return found_song
 
 
@@ -137,7 +146,7 @@ def open_in_spotify_app(track_url):
 
 def main():
     # Show all log messages.
-    basicConfig(level=DEBUG)
+    basicConfig(level=INFO)
 
     current_song = get_bagel_song()
 
@@ -152,13 +161,19 @@ def main():
                         'track_popularity': found_track['popularity'],
                         'song_link': found_track['external_urls']['spotify']}
                        for found_track in found_tracks]
+    # Display simplified search results in the terminal
     from pprint import pprint; pprint(winnowed_tracks)
 
-    # Test: Open first result in Spotify.
-    first_result = winnowed_tracks[0]['song_link']
-    open_in_spotify_app(first_result)
+    if len(winnowed_tracks) > 0:
+        # Open first result in Spotify (and start playing it).
+        first_result = winnowed_tracks[0]['song_link']
+        open_in_spotify_app(first_result)
+    else:
+        warning_message = '😱 No songs were found, so we\'re exiting early without opening the first result in Spotify.'
+        warning(warning_message)
+        exit(0)
 
-    info("Done")
+    info("✅ Done")
 
 
 if __name__ == "__main__":
