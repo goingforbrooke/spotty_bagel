@@ -2,9 +2,10 @@
 """
 TODO: Add your module docstring here.
 """
-from pathlib import Path
-from logging import basicConfig, DEBUG, debug, error, info, warning
 from base64 import b64encode
+from logging import basicConfig, DEBUG, debug, error, info, warning
+from pathlib import Path
+from subprocess import run as run_cli
 
 from requests import get as http_get, post as http_post
 
@@ -118,6 +119,22 @@ def get_bagel_song():
         info(f'Current BAGeL song: {found_song}')
         return found_song
 
+
+"""Open a song in Spotify (and it'll start playing).
+
+# Example
+
+`open -a Spotify https://open.spotify.com/track/5J8NNFnkQI2YjUcE0o2PLT`
+"""
+def open_in_spotify_app(track_url):
+    assert track_url.startswith('https://open.spotify.com/')
+    cli_cmd = ['open', '-a', 'Spotify', track_url]
+    run_cli(cli_cmd)
+
+    debug('Opened track in Spotify app')
+    return True
+
+
 def main():
     # Show all log messages.
     basicConfig(level=DEBUG)
@@ -136,6 +153,10 @@ def main():
                         'song_link': found_track['external_urls']['spotify']}
                        for found_track in found_tracks]
     from pprint import pprint; pprint(winnowed_tracks)
+
+    # Test: Open first result in Spotify.
+    first_result = winnowed_tracks[0]['song_link']
+    open_in_spotify_app(first_result)
 
     info("Done")
 
