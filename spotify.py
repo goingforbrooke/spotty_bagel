@@ -16,6 +16,7 @@ from utils import application_is_installed
 `open -a Spotify https://open.spotify.com/track/5J8NNFnkQI2YjUcE0o2PLT`
 """
 def open_in_spotify_app(track_url):
+    # todo: Add an option to open song in Spotify webapp instead of app.
     application_is_installed('open', throw_error=True)
     application_is_installed('Spotify', throw_error=True)
 

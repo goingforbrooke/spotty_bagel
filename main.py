@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-TODO: Add your module docstring here.
-"""
+"""Spotty Bagel is a command line application for opening the current [BAGeL Radio]() song in your [Spotify]() application."""
 from logging import basicConfig, DEBUG, info, warning
 
 from bagel import get_bagel_song
@@ -11,6 +9,7 @@ from vlc import toggle_vlc_playback
 
 
 def main():
+    # todo: Add `--help` CLI flag.
     # Show all log messages.
     basicConfig(level=DEBUG)
 
