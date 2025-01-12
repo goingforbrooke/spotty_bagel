@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Spotty Bagel is a command line application for opening the current [BAGeL Radio]() song in your [Spotify]() application."""
-from logging import basicConfig, DEBUG, info, warning
+from logging import basicConfig, DEBUG, error, info, warning
 
 from bagel import get_bagel_song
 from display import calculate_widest_cell, display_table_headers, display_search_results, winnow_tracks
@@ -18,6 +18,11 @@ def main():
 
     # Search Spotify for the top five matches.
     found_tracks = search_spotify_song(current_song['title'], artist_name=current_song['artist'], limit_to=5)
+    # Ensure that at least one song was found.
+    if len(found_tracks) < 1:
+        error_message = f'No matching songs were found on Spotify!'
+        error(error_message)
+        raise RuntimeError(error_message)
 
     # Reduce track info to the fields that we're interested in displaying.
     winnowed_tracks = winnow_tracks(found_tracks)
