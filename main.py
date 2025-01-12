@@ -17,6 +17,7 @@ Get your token on [Spotify's developer site](https://developer.spotify.com/docum
     - Firefox works
 """
 def get_spotify_access_token():
+    # todo: Reuse Spotify access tokens (if they aren't expired yet) instead of getting a new one for each invocation.
     client_id, client_secret = get_client_id(), get_client_secret()
 
     token_url = "https://accounts.spotify.com/api/token"
