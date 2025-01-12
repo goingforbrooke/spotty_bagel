@@ -7,6 +7,7 @@ from logging import basicConfig, DEBUG, debug, error, INFO, info, warning
 from pathlib import Path
 from subprocess import run as run_cli
 
+from platform import system
 from requests import get as http_get, post as http_post
 
 """Retrieve Spotify developer access token.
@@ -40,7 +41,10 @@ def get_spotify_access_token():
     return access_token
 
 
-"""Search for a song on Spotify."""
+"""Search for a song on Spotify.
+
+Uses Spotify's [search API](https://developer.spotify.com/documentation/web-api/reference/search)
+"""
 def search_spotify_song(song_name, artist_name, limit_to):
     client_token = get_spotify_access_token()
 
@@ -80,7 +84,10 @@ def get_client_secret():
     return client_secret
 
 
-"""Get info about the song currently playing on BAGeL Radio."""
+"""Get info about the song currently playing on BAGeL Radio.
+
+We don't require that BAGeL Radio to be playing through VLC Media Player for this to work.
+"""
 def get_bagel_song():
     bagel_stream_link = "http://ais-sa3.cdnstream1.com/2606_128.aac"
     headers = {
@@ -140,9 +147,14 @@ def get_bagel_song():
 `open -a Spotify https://open.spotify.com/track/5J8NNFnkQI2YjUcE0o2PLT`
 """
 def open_in_spotify_app(track_url):
+    application_is_installed('open', throw_error=True)
+    application_is_installed('Spotify', throw_error=True)
+
     assert track_url.startswith('https://open.spotify.com/')
+
     cli_cmd = ['open', '-a', 'Spotify', track_url]
-    run_cli(cli_cmd)
+    # Error out on non-zero return codes.
+    run_cli(cli_cmd, check=True)
 
     debug('Opened track in Spotify app')
     return True
@@ -220,6 +232,107 @@ def winnow_tracks(found_tracks):
     return winnowed_tracks
 
 
+"""Pause or play VLC media player (which plays BAGeL Radio) on MacOS.
+
+# Setup
+
+[Add BAGeL Radio to VLC](https://wiki.videolan.org/VLC_HowTo/Listen_to_online_radio/).
+
+# How it Works
+
+There's no "pause" command, but sending "play" while something's already playing has the same effect.
+
+```console
+osascript -e 'tell application "VLC" to play'
+```
+"""
+def toggle_vlc_playback():
+    # Don't throw an error if VLC's not installed b/c we want to show the download link.
+    if not application_is_installed('VLC', throw_error=False):
+        error_message = f"VLC Media player isn't installed. Get it here: http://www.videolan.org"
+        error(error_message)
+        raise RuntimeError(error_message)
+    # todo: Make vlc playback toggle platform-independent (and not just MacOS).
+    host_platform = system()
+    if host_platform != 'Darwin':
+        error_message = f'Toggling VLC not available on {host_platform}'
+        error(error_message)
+        raise NotImplemented(error_message)
+
+    cli_args = ('osascript', '-e', 'tell application "VLC" to play')
+    # Error out on non-zero return codes.
+    run_cli(cli_args, True)
+
+    info('⏯️ Paused or resumed playback of VLC media player.')
+    return True
+
+
+"""Check if an application is installed on the host system."""
+def application_is_installed(application_name, throw_error) -> bool:
+    # Applications that can by found by `which` or `where`.
+    which_where_applications = ['which', 'where', 'open', 'osascript']
+    # Applications that require us to check installation directories for.
+    manual_find_applications = ['spotify', 'vlc']
+
+    host_platform = system()
+
+    # Perform a which/where application check.
+    if application_name.lower() in which_where_applications:
+        # Choose the platform-specific command to check for programs with.
+        if host_platform == 'Windows':
+            which_or_where = 'where'
+        # Assume that non-Windows platforms (MacOS or Linux, probably) are unix systems 🦕.
+        elif host_platform == 'Darwin':
+            # I prefer `where`  in the terminal on my (MacOS) machine, but it's not installed by default.
+            which_or_where = 'which'
+        else:
+            error_message = f'Unrecognized host platform: {host_platform}.'
+            error(error_message)
+            raise RuntimeError(error_message)
+
+        # Disabled b/c max recursion depth exceeded.
+        ## Ensure that `which` or `where` is installed.
+        #if not application_is_installed(which_or_where, throw_error=True):
+        #    error_message = f"The CLI application {which_or_where} isn't installed. We need it to check if other applications are installed."
+        #    error(error_message)
+        #    # Always throw errors if `which`/`where` isn't installed.
+        #    raise RuntimeError(error_message)
+
+        # Check for the given application with `which`/`where`.
+        cli_args = [which_or_where, application_name]
+        # Error out if `which`/`where` couldn't find the application.
+        run_cli(cli_args, check=True)
+
+    # Perform a manual application check.
+    elif application_name.lower() in manual_find_applications:
+        if host_platform == 'Windows':
+            error_message = f"Manual application discovery isn't supported for Windows."
+            error(error_message)
+            raise NotImplemented(error_message)
+        elif host_platform == 'Darwin':
+            expected_path = Path(f'/Applications/{application_name.capitalize()}.app')
+            if expected_path.exists():
+                debug(f'Found application {application_name} at {expected_path}')
+            else:
+                error_message = f'Failed to find application {application_name} at {expected_path}'
+                error(error_message)
+                if throw_error:
+                    raise RuntimeError(error_message)
+        else:
+            error_message = f'Unrecognized host platform: {host_platform}.'
+            error(error_message)
+            raise RuntimeError(error_message)
+
+    else:
+        error_message = f'Unrecognized application "{application_name}"'
+        error(error_message)
+        raise RuntimeError(error_message)
+
+    debug(f"Found that application {application_name} is installed.")
+    return True
+
+
+
 def main():
     # Show all log messages.
     basicConfig(level=DEBUG)
@@ -238,10 +351,15 @@ def main():
     display_table_headers(widest_cell, winnowed_tracks)
     display_search_results(widest_cell, winnowed_tracks)
 
+    # Pause VLC so the audio doesn't overlap.
+    # todo: Add a `spotty_bagel` CLI flag that disables pausing in VLC.
+    toggle_vlc_playback()
+
     # Open the first search result in Spotify.
     if len(winnowed_tracks) > 0:
         # Open first result in Spotify (and start playing it).
         first_result = winnowed_tracks[0]['song_link']
+        # todo: Add a `spotty_bagel` CLI flag that disables opening in Spotify.
         open_in_spotify_app(first_result)
     # Otherwise, exit early if there is no track to open.
     else:
