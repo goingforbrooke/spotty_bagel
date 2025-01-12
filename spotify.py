@@ -34,7 +34,7 @@ def open_in_spotify_app(track_url):
 
 Uses Spotify's [search API](https://developer.spotify.com/documentation/web-api/reference/search)
 """
-def search_spotify_song(song_name, artist_name, limit_to):
+def search_spotify_song(song_name, artist_name, limit_to) -> list:
     client_token = get_spotify_access_token()
 
     headers = {"Authorization": f"Bearer {client_token}"}
