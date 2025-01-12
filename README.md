@@ -2,6 +2,12 @@
 
 Open the song playing on [BAGeL Radio](https://www.bagelradio.com) in Spotify.
 
+# Requirements
+
+- MacOS
+- Python
+- python requests
+
 # Installation
 
 1. Add `main.py` to `PATH`.
