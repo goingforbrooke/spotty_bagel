@@ -69,6 +69,7 @@ def get_client_secret():
     return client_secret
 
 
+"""Get info about the song currently playing on BAGeL Radio."""
 def get_bagel_song():
     bagel_stream_link = "http://ais-sa3.cdnstream1.com/2606_128.aac"
     headers = {
