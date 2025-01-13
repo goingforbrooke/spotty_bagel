@@ -20,6 +20,7 @@ osascript -e 'tell application "VLC" to play'
 ```
 """
 def toggle_vlc_playback():
+    # todo: Consider switching from osacript to the VLC's platform agnostic HTTP interface.
     # Don't throw an error if VLC's not installed b/c we want to show the download link.
     if not application_is_installed('VLC', throw_error=False):
         error_message = f"VLC Media player isn't installed. Get it here: http://www.videolan.org"
