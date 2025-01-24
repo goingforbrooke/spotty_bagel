@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "requests",
+# ]
+# ///
 """Spotty Bagel is a command line application for opening the current [BAGeL Radio]() song in your [Spotify]() application."""
 from logging import basicConfig, DEBUG, error, INFO, info, warning
 
