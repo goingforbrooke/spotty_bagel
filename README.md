@@ -39,3 +39,8 @@ Or use my application [Binify](https://github.com/goingforbrooke/binify) to do i
 # Usage
 
 Run `spotty_bagel` in your terminal when there's a song on that you like and it'll open (and start playing) in Spotify.
+
+# Future
+
+Add CLI flag to opt out of VLC pausing
+
